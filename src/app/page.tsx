@@ -1,4 +1,5 @@
 // src/app/page.tsx
+'use client';
 import { Button } from "@/components/ui/button/button";
 import Link from 'next/link';
 import { motion } from 'framer-motion';
