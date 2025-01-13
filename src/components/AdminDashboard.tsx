@@ -92,18 +92,17 @@ export default function AdminDashboard() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          // Add any auth headers if needed
         },
         body: JSON.stringify({ 
           companyName, 
-          duration: attendanceDuration 
+          duration: Number(attendanceDuration) 
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to start attendance');
+        throw new Error(data.error || data.message || 'Failed to start attendance');
       }
 
       setCurrentSession(data.session);
@@ -112,8 +111,8 @@ export default function AdminDashboard() {
         description: "Attendance session started successfully",
       });
       
-      await fetchAttendance(); // Refresh the attendance list
-      setCompanyName(''); // Reset form
+      await fetchAttendance();
+      setCompanyName('');
       setAttendanceDuration('');
       
     } catch (error) {

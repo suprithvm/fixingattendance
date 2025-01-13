@@ -4,13 +4,13 @@ import { corsMiddleware } from '@/lib/cors';
 
 export async function POST(request: NextRequest) {
   try {
-    const response = await corsMiddleware(request, NextResponse.next());
+    const headers = await corsMiddleware(request);
     const { companyName, duration } = await request.json();
 
     if (!companyName || !duration) {
       return NextResponse.json(
         { message: 'Company name and duration are required' }, 
-        { status: 400 }
+        { status: 400, headers }
       );
     }
 
@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       );
     } catch (error) {
       console.error('Error deactivating existing sessions:', error);
-      // Continue execution even if this fails
     }
 
     // Create new session
@@ -37,31 +36,34 @@ export async function POST(request: NextRequest) {
       isActive: true
     };
 
-    try {
-      const result = await db.collection('attendanceSessions').insertOne(session);
-      
-      if (!result.insertedId) {
-        throw new Error('Failed to insert new session');
-      }
-
-      return NextResponse.json({ 
-        message: 'Attendance window opened', 
-        session: { ...session, _id: result.insertedId } 
-      });
-      
-    } catch (error) {
-      console.error('Error inserting new session:', error);
-      throw new Error('Failed to create new attendance session');
+    const result = await db.collection('attendanceSessions').insertOne(session);
+    
+    if (!result.insertedId) {
+      throw new Error('Failed to insert new session');
     }
 
+    return NextResponse.json(
+      { 
+        message: 'Attendance window opened', 
+        session: { ...session, _id: result.insertedId } 
+      },
+      { headers }
+    );
+
   } catch (error) {
+    const headers = await corsMiddleware(request);
     console.error('Error in startAttendance:', error);
     return NextResponse.json(
       { 
         message: 'Error starting attendance', 
         error: error instanceof Error ? error.message : 'Unknown error' 
       }, 
-      { status: 500 }
+      { status: 500, headers }
     );
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const headers = await corsMiddleware(request);
+  return new NextResponse(null, { status: 204, headers });
 }

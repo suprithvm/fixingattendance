@@ -3,7 +3,7 @@ import clientPromise from '@/lib/mongodb';
 import { corsMiddleware } from '@/lib/cors';
 
 export async function GET(request: NextRequest) {
-  const response = await corsMiddleware(request, NextResponse.next());
+  const headers = await corsMiddleware(request);
 
   try {
     const client = await clientPromise;
@@ -13,16 +13,25 @@ export async function GET(request: NextRequest) {
       .findOne({}, { sort: { startTime: -1 } });
 
     if (!latestSession) {
-      return NextResponse.json({ message: 'No attendance sessions found' }, { status: 404 });
+      return NextResponse.json(
+        { message: 'No attendance sessions found' }, 
+        { status: 404, headers }
+      );
     }
 
     const attendanceList = await db.collection('attendance')
       .find({ sessionId: latestSession._id })
       .toArray();
 
-    return NextResponse.json({ session: latestSession, attendanceList }, { headers: response?.headers });
+    return NextResponse.json(
+      { session: latestSession, attendanceList }, 
+      { headers }
+    );
   } catch (error) {
     console.error('Error fetching attendance:', error);
-    return NextResponse.json({ message: 'Error fetching attendance' }, { status: 500, headers: response?.headers ?? {} });
+    return NextResponse.json(
+      { message: 'Error fetching attendance' }, 
+      { status: 500, headers }
+    );
   }
 }
