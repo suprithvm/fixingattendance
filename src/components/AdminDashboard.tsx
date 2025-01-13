@@ -84,26 +84,43 @@ export default function AdminDashboard() {
   const startAttendance = async () => {
     setIsLoading(true);
     try {
+      if (!companyName || !attendanceDuration) {
+        throw new Error('Company name and duration are required');
+      }
+
       const response = await fetch('/api/startAttendance', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName, duration: attendanceDuration }),
+        headers: { 
+          'Content-Type': 'application/json',
+          // Add any auth headers if needed
+        },
+        body: JSON.stringify({ 
+          companyName, 
+          duration: attendanceDuration 
+        }),
       });
+
       const data = await response.json();
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to start attendance');
       }
+
       setCurrentSession(data.session);
       toast({
         title: "Success",
         description: "Attendance session started successfully",
       });
-      fetchAttendance();
+      
+      await fetchAttendance(); // Refresh the attendance list
+      setCompanyName(''); // Reset form
+      setAttendanceDuration('');
+      
     } catch (error) {
       console.error('Error starting attendance:', error);
       toast({
         title: "Error",
-        description: (error as Error).message || "Failed to start attendance session",
+        description: error instanceof Error ? error.message : "Failed to start attendance session",
         variant: "destructive",
       });
     } finally {
